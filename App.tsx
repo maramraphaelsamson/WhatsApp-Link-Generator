@@ -323,9 +323,10 @@ const App: React.FC = () => {
         </div>
       </main>
 
-      <footer className="mt-16 text-center text-slate-400 text-sm">
+      <footer className="mt-16 text-center text-slate-400 text-sm space-y-1">
         <p>&copy; {new Date().getFullYear()} WhatsApp Link Pro. All rights reserved.</p>
-        <p className="mt-1">Grow your business with direct messaging.</p>
+        <p>Grow your business with direct messaging.</p>
+        <p className="font-semibold text-slate-500 pt-2">Created by Maram Raphael Samson</p>
       </footer>
     </div>
   );
