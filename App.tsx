@@ -64,8 +64,8 @@ const App: React.FC = () => {
       timestamp: Date.now()
     };
     
-    const newHistory = [newItem, ...history].filter(item => item.url !== generatedUrl).slice(0, 10);
-    const finalHistory = [newItem, ...history.filter(item => item.url !== generatedUrl)].slice(0, 10);
+    const filteredHistory = history.filter(item => item.url !== generatedUrl);
+    const finalHistory = [newItem, ...filteredHistory].slice(0, 10);
     
     setHistory(finalHistory);
     localStorage.setItem('wa_link_history', JSON.stringify(finalHistory));
@@ -159,7 +159,7 @@ const App: React.FC = () => {
                   </p>
                   <button 
                     onClick={() => handleCopy(generatedUrl)}
-                    className="absolute right-3 top-3 p-2 bg-white text-slate-600 hover:text-green-600 rounded-lg shadow-sm hover:shadow-md transition-all active:scale-90"
+                    className="absolute right-3 top-3 p-2 bg-white text-slate-600 rounded-lg shadow-sm hover:shadow-md transition-all active:scale-90"
                     title="Copy Link"
                   >
                     {isCopied ? <CheckCircle2 size={18} className="text-green-500" /> : <Copy size={18} />}
