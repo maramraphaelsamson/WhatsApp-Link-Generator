@@ -1,11 +1,9 @@
-
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   MessageSquare, 
   Copy, 
   ExternalLink, 
   History, 
-  Sparkles, 
   Trash2, 
   Share2,
   CheckCircle2,
@@ -14,8 +12,7 @@ import {
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { generateWhatsAppUrl, isValidPhone, formatPhoneNumber } from './utils/whatsapp';
-import { getMessageTemplates } from './services/geminiService';
-import { LinkHistoryItem, MessageTemplate } from './types';
+import { LinkHistoryItem } from './types';
 
 const App: React.FC = () => {
   const [phoneNumber, setPhoneNumber] = useState('');
@@ -23,9 +20,6 @@ const App: React.FC = () => {
   const [generatedUrl, setGeneratedUrl] = useState('');
   const [history, setHistory] = useState<LinkHistoryItem[]>([]);
   const [isCopied, setIsCopied] = useState(false);
-  const [isLoadingAI, setIsLoadingAI] = useState(false);
-  const [aiTemplates, setAiTemplates] = useState<MessageTemplate[]>([]);
-  const [businessType, setBusinessType] = useState('');
   const [showHistory, setShowHistory] = useState(false);
 
   // Load history on mount
@@ -70,9 +64,11 @@ const App: React.FC = () => {
       timestamp: Date.now()
     };
     
-    const newHistory = [newItem, ...history].slice(0, 10);
-    setHistory(newHistory);
-    localStorage.setItem('wa_link_history', JSON.stringify(newHistory));
+    const newHistory = [newItem, ...history].filter(item => item.url !== generatedUrl).slice(0, 10);
+    const finalHistory = [newItem, ...history.filter(item => item.url !== generatedUrl)].slice(0, 10);
+    
+    setHistory(finalHistory);
+    localStorage.setItem('wa_link_history', JSON.stringify(finalHistory));
   };
 
   const clearHistory = () => {
@@ -80,28 +76,15 @@ const App: React.FC = () => {
     localStorage.removeItem('wa_link_history');
   };
 
-  const fetchTemplates = async () => {
-    if (!businessType) return;
-    setIsLoadingAI(true);
-    try {
-      const data = await getMessageTemplates(businessType);
-      setAiTemplates(data.templates);
-    } catch (error) {
-      console.error("AI Error:", error);
-    } finally {
-      setIsLoadingAI(false);
-    }
-  };
-
   return (
     <div className="min-h-screen flex flex-col items-center py-8 px-4 bg-slate-50">
       {/* Header */}
-      <header className="w-full max-w-4xl text-center mb-8">
+      <header className="w-full max-w-4xl text-center mb-12">
         <div className="inline-flex items-center justify-center p-3 bg-green-500 text-white rounded-2xl mb-4 shadow-lg shadow-green-200">
           <MessageSquare size={32} />
         </div>
         <h1 className="text-4xl font-extrabold text-slate-900 tracking-tight mb-2">
-          WhatsApp Link Pro
+          WhatsApp Link Generator
         </h1>
         <p className="text-slate-500 max-w-lg mx-auto">
           Create instant chat links for your business. No more manual number saving for your customers.
@@ -110,7 +93,7 @@ const App: React.FC = () => {
 
       <main className="w-full max-w-5xl grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         
-        {/* Left Column: Form & AI */}
+        {/* Left Column: Form */}
         <div className="lg:col-span-7 space-y-6">
           <section className="bg-white rounded-3xl p-6 md:p-8 shadow-xl border border-slate-100">
             <h2 className="text-xl font-bold text-slate-800 mb-6 flex items-center gap-2">
@@ -149,7 +132,7 @@ const App: React.FC = () => {
                 </label>
                 <textarea
                   placeholder="Hello! I'm interested in your services..."
-                  rows={4}
+                  rows={6}
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
                   className="w-full px-4 py-4 bg-slate-50 border border-slate-200 rounded-xl focus:ring-4 focus:ring-green-100 focus:border-green-500 outline-none transition-all resize-none"
@@ -157,52 +140,10 @@ const App: React.FC = () => {
               </div>
             </div>
           </section>
-
-          {/* AI Helper Section */}
-          <section className="bg-gradient-to-br from-indigo-50 to-blue-50 rounded-3xl p-6 border border-blue-100 shadow-sm">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
-                <Sparkles size={18} className="text-blue-600" />
-                AI Template Generator
-              </h3>
-            </div>
-            
-            <div className="flex flex-col md:flex-row gap-2 mb-4">
-              <input
-                type="text"
-                placeholder="E.g. Real Estate Agency, Bakery..."
-                value={businessType}
-                onChange={(e) => setBusinessType(e.target.value)}
-                className="flex-1 px-4 py-3 rounded-xl border border-blue-200 bg-white focus:ring-2 focus:ring-blue-400 outline-none"
-              />
-              <button
-                onClick={fetchTemplates}
-                disabled={isLoadingAI || !businessType}
-                className="px-6 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 text-white font-semibold rounded-xl transition-all shadow-md active:scale-95"
-              >
-                {isLoadingAI ? 'Generating...' : 'Get Templates'}
-              </button>
-            </div>
-
-            {aiTemplates.length > 0 && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                {aiTemplates.map((tmp, idx) => (
-                  <button
-                    key={idx}
-                    onClick={() => setMessage(tmp.content)}
-                    className="p-4 bg-white hover:bg-white text-left border border-blue-100 rounded-2xl hover:border-blue-400 hover:shadow-md transition-all group"
-                  >
-                    <p className="font-bold text-sm text-blue-900 mb-1 group-hover:text-blue-600">{tmp.title}</p>
-                    <p className="text-slate-500 text-xs line-clamp-2">{tmp.content}</p>
-                  </button>
-                ))}
-              </div>
-            )}
-          </section>
         </div>
 
         {/* Right Column: Results & QR */}
-        <div className="lg:col-span-5 sticky top-8 space-y-6">
+        <div className="lg:col-span-5 lg:sticky lg:top-8 space-y-6">
           <div className="bg-white rounded-3xl p-6 md:p-8 shadow-2xl border border-slate-100 flex flex-col items-center">
             <h2 className="text-xl font-bold text-slate-800 mb-6 w-full text-left">Your Link</h2>
             
@@ -248,6 +189,7 @@ const App: React.FC = () => {
                     <button
                       onClick={handleSaveToHistory}
                       className="px-6 py-3 bg-slate-800 hover:bg-slate-900 text-white font-semibold rounded-xl transition-all flex items-center justify-center gap-2"
+                      title="Save to History"
                     >
                       <History size={18} />
                     </button>
@@ -324,7 +266,7 @@ const App: React.FC = () => {
       </main>
 
       <footer className="mt-16 text-center text-slate-400 text-sm space-y-1">
-        <p>&copy; {new Date().getFullYear()} WhatsApp Link Pro. All rights reserved.</p>
+        <p>&copy; {new Date().getFullYear()} WhatsApp Link Generator. All rights reserved.</p>
         <p>Grow your business with direct messaging.</p>
         <p className="font-semibold text-slate-500 pt-2">Created by Maram Raphael Samson</p>
       </footer>
